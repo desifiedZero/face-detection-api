@@ -16,7 +16,7 @@ router.register(r'groups', views.GroupViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('create_project/', csrf_exempt(CreateProject.as_view()), name='create_project'),
-    path('get_projects/', csrf_exempt(GetProject.as_view()), name='get_projects'),
+    path('get_project/<int:project_id>/', csrf_exempt(GetProject.as_view()), name='get_projects'),
     path('api/token/', views.Auth.as_view(), name='login'),
 ]
 

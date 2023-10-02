@@ -8,6 +8,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.views import APIView
 from rest_framework import status
 from api.models import Project
+from django.shortcuts import get_object_or_404
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
@@ -57,8 +58,8 @@ class CreateProject(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class GetProject(APIView):
-    def get(self, request, *args, **kwargs):
-        projects = Project.objects.all()
-        serializer = ProjectSerializer(projects, many=True)
+    def get(self, request, project_id, *args, **kwargs):
+        project = get_object_or_404(Project, project_id=project_id)
+        serializer = ProjectSerializer(project)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
