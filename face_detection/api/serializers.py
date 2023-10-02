@@ -18,7 +18,7 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = ['name', 'description', 'storageSchema', 'users']
 
 class EntrySerializer(serializers.ModelSerializer):
     class Meta:
