@@ -4,7 +4,7 @@ from django.db import models
 # Create your models here.
 
 class Project(models.Model):
-    project_id = models.AutoField(primary_key=True)
+    project_id = models.AutoField(primary_key=True, unique=True)
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=100)
     storageSchema = models.CharField(max_length=2500)
@@ -14,7 +14,7 @@ class Project(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return self.name
+        return str(self.project_id)
     
 class ProjectUserRelationship(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -36,9 +36,9 @@ class Entry(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
-        return self.name
+        return str(self.entry_id)
     
 class EntryDetails(models.Model):
     entry_detail_id = models.AutoField(primary_key=True)
@@ -51,4 +51,4 @@ class EntryDetails(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return self.name
+        return str(self.entry_detail_id)
