@@ -1,13 +1,13 @@
 from django.contrib.auth.models import User, Group
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, permissions, status, generics
-from api.serializers import UserRegistrationSerializer, UserSerializer, GroupSerializer, ProjectSerializer
+from api.serializers import EntrySerializer, ProjectActivitySerializer, UserRegistrationSerializer, UserSerializer, GroupSerializer, ProjectSerializer
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.views import APIView
-from rest_framework import status
-from api.models import Project
+from rest_framework import status, mixins
+from api.models import Project, ProjectActivity
 from django.shortcuts import get_object_or_404
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -44,9 +44,8 @@ class UserRegistrationView(generics.CreateAPIView):
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-  
-class CreateProject(APIView):
+
+class ProjectView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = ProjectSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -56,10 +55,43 @@ class CreateProject(APIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class GetProject(APIView):
+
+
     def get(self, request, project_id, *args, **kwargs):
         project = get_object_or_404(Project, project_id=project_id)
         serializer = ProjectSerializer(project)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+class ProjectsView(APIView):    
+    def get(self, request, *args, **kwargs):
+        items = Project.objects.filter(users__id=self.request.user.id)
+        serializer = ProjectSerializer(items, many=True)
+        return Response(serializer.data, *args, **kwargs)
+    
+class ActivityView(APIView):    
+    def get(self, request, *args, **kwargs):
+        items = ProjectActivity.objects.filter(project__users__id=self.request.user.id)
+        serializer = ProjectActivitySerializer(items, many=True)
+        return Response(serializer.data, *args, **kwargs)
+
+class Entry(APIView):
+    # create an api for multipart form data
+    def post(self, request, *args, **kwargs):
+        serializer = EntrySerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Entry created successfully"},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get(self, request, *args, **kwargs):
+        serializer = EntrySerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Entry created successfully"},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

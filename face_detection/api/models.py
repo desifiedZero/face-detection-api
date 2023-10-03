@@ -52,3 +52,15 @@ class EntryDetails(models.Model):
     
     def __str__(self):
         return str(self.entry_detail_id)
+    
+class ProjectActivity(models.Model):
+    project_activity_id = models.AutoField(primary_key=True)
+    activity_type = models.CharField(max_length=100)
+    activity_data = models.JSONField()
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return str(self.project_activity_id)

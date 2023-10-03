@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework import routers
 from api import views
 from rest_framework.authtoken.views import obtain_auth_token
-from .views import CreateProject, GetProject
+from .views import ProjectView, ProjectsView
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.conf.urls.static import static
@@ -15,8 +15,9 @@ router.register(r'groups', views.GroupViewSet)
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
-    path('create_project/', csrf_exempt(CreateProject.as_view()), name='create_project'),
-    path('get_project/<int:project_id>/', csrf_exempt(GetProject.as_view()), name='get_projects'),
+    path('project/', csrf_exempt(ProjectView.as_view()), name='project'),
+    path('project/<int:project_id>', csrf_exempt(ProjectView.as_view()), name='get_project'),
+    path('projects/', ProjectsView.as_view(), name='get_projects'),
     path('api/token/', views.Auth.as_view(), name='login'),
 ]
 

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 
-from api.models import Entry, EntryDetails, Project
+from .models import Entry, EntryDetails, Project, ProjectActivity
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -46,3 +46,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             last_name=validated_data['last_name']
         )
         return user
+    
+class ProjectActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectActivity
+        fields = '__all__'
