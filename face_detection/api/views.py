@@ -8,8 +8,16 @@ from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.views import APIView
 from rest_framework import status, mixins
-from api.models import Entry, Project, ProjectActivity
+from api.models import Entry, Project, ProjectActivity, ProjectInviteToken, ProjectUserRelationship
+from .permissions import (
+    InvitePermission
+)
+from django.core.mail import EmailMessage
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.template.loader import render_to_string
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -111,8 +119,78 @@ class EntryView(APIView):
     
 class ActivityView(APIView):
     def get(self, request, project_id, *args, **kwargs):
-        activity = ProjectActivity.objects.filter(project__id=project_id).order_by('-created_at')
-
-        # get activity from database and serialize
+        activity = ProjectActivity.objects.filter(
+            project__id=project_id
+        ).order_by('-created_at')
         serializer = ProjectActivitySerializer(activity, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class InviteView(APIView):
+    permission_classes = [InvitePermission]
+
+    def post(self, request, project_id):
+        user_email = request.data.get("email")
+
+        try:
+            user = User.objects.get(email=user_email)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            project = Project.objects.get(id = project_id)
+        except Project.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+
+        token = default_token_generator.make_token(user)
+        token = urlsafe_base64_encode(force_bytes(token))
+
+        # Create a PasswordResetToken record
+        _token = ProjectInviteToken.objects.create(
+            user=user, token=token, project=project
+        )
+
+        # Send the email
+        accept_link = f"{request.get_host()}/api/invite/accept/{project_id}/{token}/"
+        decline_link = f"{request.get_host()}/api/invite/decline/{project_id}/{token}/"
+        message = render_to_string('invite.html', {'accept_link': accept_link, 'decline_link': decline_link})
+        email = EmailMessage("Project Invite", message, to=[user.email])
+        email.send()
+
+        return Response({"detail": "Invite sent to the email"}, status=status.HTTP_200_OK)
+
+
+class InviteAcceptView(APIView):
+
+      def get(self, request, project_id, token):
+        try:
+            invite_obj = ProjectInviteToken.objects.get(token=token)
+        except ProjectInviteToken.DoesNotExist:
+            return Response({"detail": "Token not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = invite_obj.user
+        try:
+            project = Project.objects.get(
+                id = project_id
+            )
+        except Project.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        proj = ProjectUserRelationship.objects.create(
+            user = user,
+            project = project,
+        )
+        invite_obj.delete()
+        return Response({"detail": "Added to project successful"}, status=status.HTTP_200_OK)
+      
+
+class InviteDeclineView(APIView):
+
+      def get(self, request, project_id, token):
+        try:
+            invite_obj = ProjectInviteToken.objects.get(token=token)
+        except ProjectInviteToken.DoesNotExist:
+            return Response({"detail": "Token not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        invite_obj.delete()
+        return Response({"detail": "Password reset successful"}, status=status.HTTP_200_OK)

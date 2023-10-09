@@ -1,6 +1,6 @@
 from django.urls import include, path
 from rest_framework import routers
-from api import views
+from . import views
 from .views import ActivityView, ProjectView, ProjectsView, EntryView
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -22,6 +22,10 @@ urlpatterns = [
 
     path('api/token/', views.Auth.as_view(), name='login'),
     path('api/register/', views.UserRegistrationView.as_view(), name='register'),
+
+    path('api/invite/generate/<int:project_id>/', views.InviteView.as_view(), name="invite"),
+    path('api/invite/accept/<int:project_id>/<str:token>/', views.InviteAcceptView.as_view(), name="accept-invite"),
+    path('api/invite/decline/<int:project_id>/<str:token>/', views.InviteDeclineView.as_view(), name="decline-invite"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

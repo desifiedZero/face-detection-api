@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from api.models import Entry, EntryDetails, Project, ProjectUserRelationship, ProjectActivity
+from api.models import (
+    Entry, 
+    EntryDetails, 
+    Project, 
+    ProjectUserRelationship, 
+    ProjectActivity
+)
 
 # Register your models here.
 admin.site.site_header = "Face Detection Admin"

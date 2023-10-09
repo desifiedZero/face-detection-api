@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-m7*h^jh2+p!jlsv$9wb)ufb*70af$#xr2#qno0=!w^+mbe4yel
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.18.55']
+ALLOWED_HOSTS = []
 
 MEDIA_URL = '/images/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'images')
@@ -81,14 +81,14 @@ WSGI_APPLICATION = 'face_detection.wsgi.application'
 
 DATABASES = {
     'default': {
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': BASE_DIR / 'db.sqlite3',
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'face_detection',
-        'USER': 'face_detection',
-        'PASSWORD': '4Islamabad',
-        'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        # 'ENGINE': 'django.db.backends.mysql',
+        # 'NAME': 'face_detection',
+        # 'USER': 'face_detection',
+        # 'PASSWORD': '4Islamabad',
+        # 'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
+        # 'PORT': '3306',
     }
 }
 
@@ -122,6 +122,8 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 # Static files (CSS, JavaScript, Images)
