@@ -1,6 +1,4 @@
-import json
 from django.contrib.auth.models import User, Group
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, permissions, status, generics
 from api.serializers import EntrySerializer, ProjectActivitySerializer, UserRegistrationSerializer, UserSerializer, GroupSerializer, ProjectSerializer
 from rest_framework.authtoken.models import Token
@@ -62,13 +60,12 @@ class UserRegistrationView(generics.CreateAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProjectView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = ProjectSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-
 
             # attach user to project 
             user = User.objects.get(id=self.request.user.id)
