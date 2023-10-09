@@ -4,17 +4,21 @@ from django.db import models
 # Create your models here.
 
 class Project(models.Model):
-    project_id = models.AutoField(primary_key=True, unique=True)
+    id = models.AutoField(primary_key=True, unique=True)
     name = models.CharField(max_length=100)
-    description = models.CharField(max_length=100)
-    storageSchema = models.CharField(max_length=2500)
+    description = models.CharField(max_length=1000)
+    storageSchema = models.JSONField(null=True)
     users = models.ManyToManyField(User, through='ProjectUserRelationship', related_name='projects')
+
+    @property
+    def registered(self):
+        return self.users.count()
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return str(self.project_id)
+        return str(self.id)
     
 class ProjectUserRelationship(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

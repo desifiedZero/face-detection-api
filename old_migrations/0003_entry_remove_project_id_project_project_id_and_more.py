@@ -24,15 +24,6 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
             ],
         ),
-        migrations.RemoveField(
-            model_name='project',
-            name='id',
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='project_id',
-            field=models.AutoField(default=0, primary_key=True, serialize=False, unique=True),
-        ),
         migrations.AddField(
             model_name='project',
             name='users',

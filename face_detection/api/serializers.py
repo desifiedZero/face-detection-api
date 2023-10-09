@@ -16,22 +16,38 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
         fields = ['url', 'name']
 
 class ProjectSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(required=True)
+    storageSchema = serializers.JSONField(required=True)
+    registered = serializers.SerializerMethodField('get_registered')
+
+    def get_registered(self, obj):
+        return obj.entry_set.all().count()
+
     class Meta:
         model = Project
-        fields = ['name', 'description', 'storageSchema', 'users']
+        fields = ['id', 'name', 'description', 'storageSchema', 'registered']
 
 class EntrySerializer(serializers.ModelSerializer):
+    entry_details = serializers.SerializerMethodField('get_entry_details')
+
+    def get_entry_details(self, obj):
+        return EntryDetailsSerializer(obj.entrydetails_set.all(), many=True).data
+
     class Meta:
         model = Entry
-        fields = '__all__'
+        fields = ['entry_id', 'image', 'entry_details']
 
 class EntryDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = EntryDetails
-        fields = '__all__'
+        fields = ['entry_detail_id', 'kv_key', 'kv_value', 'kv_type']
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(required=True)
+    email = serializers.CharField(required=True)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
 
     class Meta:
         model = User
@@ -50,4 +66,4 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class ProjectActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectActivity
-        fields = '__all__'
+        fields = ['activity_type', 'activity_data', 'project_activity_id', 'created_at']
