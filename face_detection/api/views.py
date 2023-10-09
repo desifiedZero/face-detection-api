@@ -66,7 +66,7 @@ class UserRegistrationView(generics.CreateAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProjectView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = ProjectSerializer(data=request.data, context={'request': request})
@@ -85,13 +85,14 @@ class ProjectView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
     def get(self, request, project_id, *args, **kwargs):
         project = get_object_or_404(Project, id=project_id)
         serializer = ProjectSerializer(project)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class ProjectsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
         items = Project.objects.filter(users__id=self.request.user.id)
         serializer = ProjectSerializer(items, many=True)
