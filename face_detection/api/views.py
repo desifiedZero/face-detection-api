@@ -190,4 +190,4 @@ class InviteDeclineView(APIView):
             return Response({"detail": "Token not found"}, status=status.HTTP_400_BAD_REQUEST)
 
         invite_obj.delete()
-        return Response({"detail": "Password reset successful"}, status=status.HTTP_200_OK)
+        return Response({"detail": "Successfully declined"}, status=status.HTTP_200_OK)
