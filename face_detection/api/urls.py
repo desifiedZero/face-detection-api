@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/invite/generate/<int:project_id>/', views.InviteView.as_view(), name="invite"),
     path('api/invite/accept/<int:project_id>/<str:token>/', views.InviteAcceptView.as_view(), name="accept-invite"),
     path('api/invite/decline/<int:project_id>/<str:token>/', views.InviteDeclineView.as_view(), name="decline-invite"),
+    path('api/recognized/', views.FileUploadView.as_view(), name="recognized"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

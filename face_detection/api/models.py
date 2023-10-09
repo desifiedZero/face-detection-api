@@ -32,9 +32,15 @@ class ProjectUserRelationship(models.Model):
     class Meta:
         unique_together = ['user', 'project']
 
+
+def resolve_pathname(instance, filename):
+    project_id = instance.project.id if instance.project else None
+    upload_to = f'images/{project_id}/{filename}'
+    return upload_to
+
 class Entry(models.Model):
     entry_id = models.AutoField(primary_key=True)
-    image = models.ImageField(upload_to='images/')
+    image = models.ImageField(upload_to=resolve_pathname)
     optimized_image = models.JSONField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
@@ -43,6 +49,8 @@ class Entry(models.Model):
 
     def __str__(self):
         return str(self.entry_id)
+
+
     
 class EntryDetails(models.Model):
     entry_detail_id = models.AutoField(primary_key=True)
