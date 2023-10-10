@@ -244,6 +244,8 @@ class FaceScanView(APIView):
         base_image_folder = os.path.join(settings.BASE_DIR, 'images', 'images')
         folder = os.path.join(base_image_folder, str(project_id))
         # print(type(request.FILES['test'].read()))
+
+        project = get_object_or_404(Project, id=project_id)
         
         model, paths = train([folder])
         predicted_name = recognize_face(
@@ -252,5 +254,44 @@ class FaceScanView(APIView):
             model['eigenfaces'], 
             model['mean_face']
         )
-        print("Predicted name: " + str(paths[predicted_name]))
+
+        file_name = paths[predicted_name]
+        split = file_name.split('\\')[-4:]
+        print(split)
+        if predicted_name != -1:
+            ei = EntryImage.objects.filter(
+                image__icontains = split[-1]
+            ).first()
+            print(ei)
+            
+            if ei:
+                serializer = EntrySerializer(ei.entry)
+
+            activity_data = {
+                "name": "person_scanned",
+                "info": serializer.data if ei is not None else None,
+                "success": False if predicted_name == 1 else True
+            }
+
+            ProjectActivity.objects.create(
+                activity_type = "scanned-entity",
+                activity_data = activity_data,
+                project = project
+            )
+
+
+
+        # recognized_img_path = None
+
+        # counter = 0
+        # for folder_path in folder:
+        #     image_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.jpg')]
+        #     if counter + len(image_files) > predicted_name:
+        #         recognized_img_path = os.path.join(folder_path, image_files[predicted_name - counter])
+        #         break
+        #     counter += len(image_files)
+
+        # print(recognized_img_path)
+
         return Response("Hello World")
+
