@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.views import APIView
 from rest_framework import status, mixins
-from api.models import Entry, Project, ProjectActivity, ProjectInviteToken, ProjectUserRelationship, EntryDetails
+from api.models import Entry, EntryImage, Project, ProjectActivity, ProjectInviteToken, ProjectUserRelationship, EntryDetails
 from .permissions import (
     InvitePermission
 )
@@ -206,17 +206,22 @@ class FaceRegisterView(APIView):
     def post(self, request):
         project_id = request.data.get('project_id')
 
+        project = get_object_or_404(Project, id=project_id)
+
+        a = Entry.object.create(
+            project = project,
+            optimized_image="{'optimized': true}"
+        )
+        b = EntryDetails.objects.create(
+            entry=a,
+            kv_key=request.data.get('kv_key'),
+            kv_value=request.data.get('kv_value'),
+            kv_type=request.data.get('kv_type'),
+        )
         for i in request.FILES:
-            a = Entry.object.create(
+            c = EntryImage.objects.create(
                 image = i,
-                project_id = project_id,
-                optimized_image="{'optimized': true}"
-            )
-            b = EntryDetails.objects.create(
-                entry=a,
-                kv_key=request.data.get('kv_key'),
-                kv_value=request.data.get('kv_value'),
-                kv_type=request.data.get('kv_type'),
+                entry = a
             )
 
         return Response(status=status.HTTP_201_CREATED)

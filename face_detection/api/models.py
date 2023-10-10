@@ -40,10 +40,7 @@ def resolve_pathname(instance, filename):
 
 class Entry(models.Model):
     entry_id = models.AutoField(primary_key=True)
-    image = models.ImageField(upload_to=resolve_pathname)
-    optimized_image = models.JSONField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -55,13 +52,17 @@ class EntryDetails(models.Model):
     kv_key = models.CharField(max_length=100)
     kv_value = models.CharField(max_length=100)
     kv_type = models.CharField(max_length=30)
-    entry = models.ForeignKey(Entry, on_delete=models.CASCADE)
+    entry = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="entries")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return str(self.entry_detail_id)
+    
+class EntryImage(models.Model):
+    entry = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="entry")
+    image = models.ImageField(upload_to=resolve_pathname)
     
 class ProjectActivity(models.Model):
     project_activity_id = models.AutoField(primary_key=True)
