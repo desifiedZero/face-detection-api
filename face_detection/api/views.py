@@ -204,6 +204,7 @@ class FaceRegisterView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        project_id = request.data.get('project_id')
 
         for i in request.FILES:
             a = Entry.object.create(
