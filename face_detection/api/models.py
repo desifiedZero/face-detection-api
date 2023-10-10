@@ -50,8 +50,6 @@ class Entry(models.Model):
     def __str__(self):
         return str(self.entry_id)
 
-
-    
 class EntryDetails(models.Model):
     entry_detail_id = models.AutoField(primary_key=True)
     kv_key = models.CharField(max_length=100)

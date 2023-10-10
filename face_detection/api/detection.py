@@ -9,16 +9,25 @@ import time
 
 # 1. Helper Functions
 def read_and_preprocess(img_path, size=(180, 200)):
-    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-    img_resized = cv2.resize(img, size)
+    # img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    print(img_path)
+
+    # Decode the NumPy array into an OpenCV image
+    if isinstance(img_path, str):
+        image = cv2.imread(img_path, cv2.IMREAD_COLOR)
+    else:
+        image_array = np.frombuffer(img_path, dtype=np.uint8)
+        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    img_resized = cv2.resize(image, size)
     return img_resized.flatten()
 # by me to(This function reads an image from a given path,convert it to grayscale,resizes it to the desired size])
 # in short return 1D array or flattens the matrix into a 1D vector
 def construct_data_matrix(folders, size=(180, 200)):
     data = []
     paths = []
+    print(folders)
     for folder_path in folders:
-        image_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.jpg')]
+        image_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
         for image_file in image_files:
             img_path = os.path.join(folder_path, image_file)
             data.append(read_and_preprocess(img_path, size))
@@ -68,15 +77,15 @@ def train(folders):
         'projected_faces': projected_faces
     }
 
-    with open('face_model.pkl', 'wb') as file:
-        pickle.dump(model, file)
+    # with open('face_model.pkl', 'wb') as file:
+    #     pickle.dump(model, file)
     
     return model, paths
 
 
-def test_face_recognitions(test_img_paths, train_folders):
-    with open('face_model.pkl', 'rb') as file:
-        model = pickle.load(file)
+def test_face_recognitions(test_img_paths, train_folders, model):
+    # with open('face_model.pkl', 'rb') as file:
+    #     model = pickle.load(file)
 
     for test_img_path in test_img_paths:
         new_face = read_and_preprocess(test_img_path)

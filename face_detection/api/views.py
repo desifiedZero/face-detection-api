@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.views import APIView
 from rest_framework import status, mixins
-from api.models import Entry, Project, ProjectActivity, ProjectInviteToken, ProjectUserRelationship
+from api.models import Entry, Project, ProjectActivity, ProjectInviteToken, ProjectUserRelationship, EntryDetails
 from .permissions import (
     InvitePermission
 )
@@ -204,20 +204,37 @@ class FaceRegisterView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+
+        for i in request.FILES:
+            a = Entry.object.create(
+                image = i,
+                project_id = project_id,
+                optimized_image="{'optimized': true}"
+            )
+            b = EntryDetails.objects.create(
+                entry=a,
+                kv_key=request.data.get('kv_key'),
+                kv_value=request.data.get('kv_value'),
+                kv_type=request.data.get('kv_type'),
+            )
+
+        return Response(status=status.HTTP_201_CREATED)
+
+class FaceScanView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
         project_id = request.data.get('project_id')
         base_image_folder = os.path.join(settings.BASE_DIR, 'images', 'images')
         folder = os.path.join(base_image_folder, str(project_id))
-
-        # model = train(folder)
-
-        uploaded_images = request.FILES
-        print(uploaded_images)
-        # recognized = test_face_recognitions(uploaded_images, folder, model)
-
-        return Response(recognized, content_type='image/jpeg')
-
-class FaceScanView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
+        # print(type(request.FILES['test'].read()))
+        
+        model, paths = train([folder])
+        predicted_name = recognize_face(
+            read_and_preprocess(request.FILES['test'].read()), 
+            model['projected_faces'], 
+            model['eigenfaces'], 
+            model['mean_face']
+        )
+        print("Predicted name: " + str(paths[predicted_name]))
         return Response("Hello World")
