@@ -61,7 +61,7 @@ class EntryDetails(models.Model):
         return str(self.entry_detail_id)
     
 class EntryImage(models.Model):
-    entry = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="entry")
+    entry = models.ForeignKey(Entry, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to=resolve_pathname)
     
 class ProjectActivity(models.Model):

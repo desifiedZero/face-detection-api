@@ -29,9 +29,13 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class EntrySerializer(serializers.ModelSerializer):
     entry_details = serializers.SerializerMethodField('get_entry_details')
+    image = serializers.SerializerMethodField('get_image')
 
     def get_entry_details(self, obj):
-        return EntryDetailsSerializer(obj.entrydetails_set.all(), many=True).data
+        return EntryDetailsSerializer(obj.entries.all(), many=True).data
+    
+    def get_image(self, obj):
+        return obj.images.first().image.url
 
     class Meta:
         model = Entry

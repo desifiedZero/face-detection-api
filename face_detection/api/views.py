@@ -24,6 +24,7 @@ from .detection import (
 from django.conf import settings
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 import os 
+import json
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
@@ -208,16 +209,19 @@ class FaceRegisterView(APIView):
 
         project = get_object_or_404(Project, id=project_id)
 
-        a = Entry.object.create(
+        a = Entry.objects.create(
             project = project,
-            optimized_image="{'optimized': true}"
         )
-        for i in request.data.get('fields'):
+
+        jsoned = request.data.get('fields')
+        jsoned = json.loads(jsoned)
+
+        for i in jsoned:
             b = EntryDetails.objects.create(
-                entry=a,
-                kv_key=request.data.get('kv_key'),
-                kv_value=request.data.get('kv_value'),
-                kv_type=request.data.get('kv_type'),
+                entry = a,
+                kv_key = i.get('kv_key'),
+                kv_value = i.get('kv_value'),
+                kv_type = i.get('kv_type'),
             )
         for i in request.FILES:
             c = EntryImage.objects.create(
