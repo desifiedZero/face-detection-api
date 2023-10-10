@@ -252,5 +252,8 @@ class FaceScanView(APIView):
             model['eigenfaces'], 
             model['mean_face']
         )
-        print("Predicted name: " + str(paths[predicted_name]))
-        return Response("Hello World")
+
+        if (predicted_name == -1):
+            return Response("Face not recognized", status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(paths[predicted_name], status=status.HTTP_200_OK)
