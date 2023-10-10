@@ -212,12 +212,13 @@ class FaceRegisterView(APIView):
             project = project,
             optimized_image="{'optimized': true}"
         )
-        b = EntryDetails.objects.create(
-            entry=a,
-            kv_key=request.data.get('kv_key'),
-            kv_value=request.data.get('kv_value'),
-            kv_type=request.data.get('kv_type'),
-        )
+        for i in request.data.get('fields'):
+            b = EntryDetails.objects.create(
+                entry=a,
+                kv_key=request.data.get('kv_key'),
+                kv_value=request.data.get('kv_value'),
+                kv_type=request.data.get('kv_type'),
+            )
         for i in request.FILES:
             c = EntryImage.objects.create(
                 image = i,
