@@ -5,7 +5,6 @@ import pickle
 import os
 import matplotlib.pyplot as plt
 import time
-from django.conf import settings
 
 
 # 1. Helper Functions
@@ -17,13 +16,14 @@ def read_and_preprocess(img_path, size=(180, 200)):
 # in short return 1D array or flattens the matrix into a 1D vector
 def construct_data_matrix(folders, size=(180, 200)):
     data = []
+    paths = []
     for folder_path in folders:
-        print(folder_path)
-        image_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+        image_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.jpg')]
         for image_file in image_files:
             img_path = os.path.join(folder_path, image_file)
             data.append(read_and_preprocess(img_path, size))
-    return np.array(data).T
+            paths.append(img_path)
+    return np.array(data).T, paths
 # construct data matrix id designed to create a data matrix containing grayscale images from specified folders
 #Computes the mean of the faces and centers the data by subtracting the mean face from every face in the matrix.
 def mean_centering(matrix):
@@ -55,34 +55,35 @@ def recognize_face(new_face, projected_faces, eigenfaces, mean_face, threshold=2
     else:
         return -1  # indicating face not recognized
 
-# PICKEL_FOLDER = {settings.BASE_DIR} / 'face_model.pkl' 
 
 def train(folders):
-    A = construct_data_matrix(folders)
+    A, paths = construct_data_matrix(folders)
     A_centered, mean_face = mean_centering(A)
     eigenfaces = compute_eigenfaces(A_centered, num_eigenfaces=20)
     projected_faces = np.dot(eigenfaces.T, A_centered)
     
-    return {
+    model = {
         'eigenfaces': eigenfaces,
         'mean_face': mean_face,
         'projected_faces': projected_faces
     }
 
-    # with open(PICKEL_FOLDER, 'wb') as file:
-    #     pickle.dump(model, file)
+    with open('face_model.pkl', 'wb') as file:
+        pickle.dump(model, file)
+    
+    return model, paths
 
 
-def test_face_recognitions(test_img_paths, train_folders, model):
-    # with open(PICKEL_FOLDER, 'rb') as file:
-    #     model = pickle.load(file)
+def test_face_recognitions(test_img_paths, train_folders):
+    with open('face_model.pkl', 'rb') as file:
+        model = pickle.load(file)
 
     for test_img_path in test_img_paths:
         new_face = read_and_preprocess(test_img_path)
         recognized_index = recognize_face(new_face, model['projected_faces'], model['eigenfaces'], model['mean_face'])
 
         if recognized_index == -1:
-            # print(f"Face in {test_img_path} not recognized!")
+            print(f"Face in {test_img_path} not recognized!")
             continue
 
         test_img = cv2.imread(test_img_path, cv2.IMREAD_GRAYSCALE)
@@ -99,7 +100,7 @@ def test_face_recognitions(test_img_paths, train_folders, model):
         recognized_img = cv2.imread(recognized_img_path, cv2.IMREAD_GRAYSCALE) if recognized_img_path else None
 
         fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-        return recognized_img
+
         # axes[0].imshow(test_img, cmap='gray')
         # axes[0].set_title("Test Face")
         # axes[0].axis('off')
@@ -112,40 +113,6 @@ def test_face_recognitions(test_img_paths, train_folders, model):
         # plt.tight_layout()
         # plt.show()
 
-        # print(f"The recognized face has the index: {recognized_index}")
-        # print(f"The recognized face is located at: {recognized_img_path}")
-        # print("-" * 50)
-
-
-if __name__ == "__main__":
-    train_folders = [
-        "..\dataimage"
-    ]
-    
-    print("Training Data")
-    start_time = time.time()
-    train(train_folders)
-    end_time = time.time()
-
-    print("Elapsed Time for training is " + str(end_time - start_time))
-    
-    test_folder = "..\\test_images"
-    test_img_paths = [os.path.join(test_folder, f) for f in os.listdir(test_folder) if f.endswith('.jpg')]
-    
-    print("warming up for testing")
-    for i in range(5):
-        test_face_recognitions(test_img_paths[:10], train_folders) # checking first 20
-
-    print("Performing tests")
-    sum = 0
-    numOfTests = 5
-
-    start_time = time.time()
-    test_face_recognitions(test_img_paths[:10], train_folders)
-
-    end_time = time.time()
-
-    print("It took " + str(end_time - start_time) + " seconds to attempt to recognise 5 test images from a list of 54 stored images")
-
-    
-
+        print(f"The recognized face has the index: {recognized_index}")
+        print(f"The recognized face is located at: {recognized_img_path}")
+        print("-" * 50)

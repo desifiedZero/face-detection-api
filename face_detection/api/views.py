@@ -16,9 +16,10 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.template.loader import render_to_string
-from .face_detector import (
+from .detection import (
     train,
-    test_face_recognitions
+    recognize_face,
+    read_and_preprocess
 )
 from django.conf import settings
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
@@ -199,28 +200,24 @@ class InviteDeclineView(APIView):
         return Response({"detail": "Successfully declined"}, status=status.HTTP_200_OK)
 
 
-class FileUploadView(APIView):
-    
-    # permission_classes = [permissions.IsAuthenticated]
+class FaceRegisterView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-     def post(self, request):
+    def post(self, request):
         project_id = request.data.get('project_id')
         base_image_folder = os.path.join(settings.BASE_DIR, 'images', 'images')
         folder = os.path.join(base_image_folder, str(project_id))
 
-        model = train(folder)
+        # model = train(folder)
 
         uploaded_images = request.FILES
         print(uploaded_images)
-        recognized = test_face_recognitions(uploaded_images, folder, model)
+        # recognized = test_face_recognitions(uploaded_images, folder, model)
 
         return Response(recognized, content_type='image/jpeg')
 
-    # def post(self, request):
-    #     folder = f"images/images/{request.data.get('project_id')}/"
-    #     print(folder)
-    #     model = train(folder)
-    #     image = [i for i in self.request.FILES]
-    #     print(image)
-    #     recognized = test_face_recognitions(image, folder, model)
-    #     return Response(recognized, content_type='image/jpeg')
+class FaceScanView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        return Response("Hello World")
