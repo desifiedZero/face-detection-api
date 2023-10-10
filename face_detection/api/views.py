@@ -202,7 +202,7 @@ class InviteDeclineView(APIView):
 
 
 class FaceRegisterView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         project_id = request.data.get('project_id')
@@ -223,11 +223,16 @@ class FaceRegisterView(APIView):
                 kv_value = i.get('kv_value'),
                 kv_type = i.get('kv_type'),
             )
-        for i in request.FILES:
-            c = EntryImage.objects.create(
-                image = i,
+
+        for file_name, file_obj in request.FILES.items():
+            c = EntryImage(
                 entry = a
             )
+            c.image.upload_to = f"images/{project_id}/"
+            if not file_name.endswith('.'):
+                file_name += '.' + file_obj.name.split('.')[-1]
+            c.image.save(file_name, file_obj) 
+            c.save()
 
         return Response(status=status.HTTP_201_CREATED)
 

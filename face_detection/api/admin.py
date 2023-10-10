@@ -5,7 +5,8 @@ from api.models import (
     EntryDetails, 
     Project, 
     ProjectUserRelationship, 
-    ProjectActivity
+    ProjectActivity,
+    EntryImage
 )
 
 # Register your models here.
@@ -17,6 +18,7 @@ admin.site.index_title = "Welcome to Face Detection Portal"
 admin.site.register(Entry)
 admin.site.register(EntryDetails)
 admin.site.register(ProjectActivity)
+admin.site.register(EntryImage)
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):

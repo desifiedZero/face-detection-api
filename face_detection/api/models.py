@@ -34,7 +34,7 @@ class ProjectUserRelationship(models.Model):
 
 
 def resolve_pathname(instance, filename):
-    project_id = instance.project.id if instance.project else None
+    project_id = instance.entry.project.id if instance.entry.project else None
     upload_to = f'images/{project_id}/{filename}'
     return upload_to
 
