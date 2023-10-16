@@ -52,7 +52,7 @@ def compute_eigenfaces(matrix, num_eigenfaces=None):
 
 #calculate the Euclidean distances between this projected test face and all the projected training faces. lower value more precise
 #.T property of a numpy array is used to transpose the matrix
-def recognize_face(new_face, projected_faces, eigenfaces, mean_face, threshold=2200):  # Threshold value can be adjusted
+def recognize_face(new_face, projected_faces, eigenfaces, mean_face, threshold=7000):  # Threshold value can be adjusted
     new_face_centered = new_face - mean_face.ravel()
     new_face_projected = np.dot(eigenfaces.T, new_face_centered).reshape(-1, 1)
     distances = np.linalg.norm(projected_faces - new_face_projected, axis=0)
