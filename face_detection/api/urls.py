@@ -22,6 +22,7 @@ urlpatterns = [
 
     path('api/token/', views.Auth.as_view(), name='login'),
     path('api/register/', views.UserRegistrationView.as_view(), name='register'),
+    path('api/me/', views.ActiveUserView.as_view(), name='user'),
 
     path('api/invite/generate/<int:project_id>/', views.InviteView.as_view(), name="invite"),
     path('api/invite/accept/<int:project_id>/<str:token>/', views.InviteAcceptView.as_view(), name="accept-invite"),

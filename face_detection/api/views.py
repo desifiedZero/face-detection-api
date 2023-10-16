@@ -92,6 +92,18 @@ class ProjectView(APIView):
         serializer = ProjectSerializer(project)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+    def delete(self, request, project_id):
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        if project.users.filter(id=self.request.user.id).exists():
+            project.delete()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    
 class ProjectsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -190,8 +202,7 @@ class InviteAcceptView(APIView):
       
 
 class InviteDeclineView(APIView):
-
-      def get(self, request, project_id, token):
+    def get(self, request, project_id, token):
         try:
             invite_obj = ProjectInviteToken.objects.get(token=token)
         except ProjectInviteToken.DoesNotExist:
@@ -200,6 +211,21 @@ class InviteDeclineView(APIView):
         invite_obj.delete()
         return Response({"detail": "Successfully declined"}, status=status.HTTP_200_OK)
 
+# api endpoint to get active user data with exception handling
+class ActiveUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user = User.objects.get(id=self.request.user.id)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        # do not use UserSerializer from serializers.py
+        # it will expose the password
+        serializer = UserSerializer(user, context={'request': request})
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class FaceRegisterView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
@@ -234,7 +260,7 @@ class FaceRegisterView(APIView):
             c.image.save(file_name, file_obj) 
             c.save()
 
-        return Response(status=status.HTTP_201_CREATED)
+        return Response({}, status=status.HTTP_201_CREATED)
 
 class FaceScanView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
@@ -255,22 +281,10 @@ class FaceScanView(APIView):
             model['mean_face']
         )
 
-        file_name = paths[predicted_name]
-        split = file_name.split('\\')[-4:]
-        print(split)
-        if predicted_name != -1:
-            ei = EntryImage.objects.filter(
-                image__icontains = split[-1]
-            ).first()
-            print(ei)
-            
-            if ei:
-                serializer = EntrySerializer(ei.entry)
-
+        if predicted_name == -1:
             activity_data = {
-                "name": "person_scanned",
-                "info": serializer.data if ei is not None else None,
-                "success": False if predicted_name == 1 else True
+                "name": "Entity Scanned",
+                "success": False if predicted_name == -1 else True
             }
 
             ProjectActivity.objects.create(
@@ -279,19 +293,29 @@ class FaceScanView(APIView):
                 project = project
             )
 
+            return Response("Entity not found!", status=status.HTTP_400_BAD_REQUEST)
+        
+        file_name = paths[predicted_name]
+        split = file_name.split('\\')[-4:]
 
+        ei = EntryImage.objects.filter(
+            image__icontains = split[-1]
+        ).first()
+        
+        if ei:
+            serializer = EntrySerializer(ei.entry)
 
-        # recognized_img_path = None
+        activity_data = {
+            "name": "Entity Scanned",
+            "info": serializer.data if ei is not None else None,
+            "success": False if predicted_name == -1 else True
+        }
 
-        # counter = 0
-        # for folder_path in folder:
-        #     image_files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.jpg')]
-        #     if counter + len(image_files) > predicted_name:
-        #         recognized_img_path = os.path.join(folder_path, image_files[predicted_name - counter])
-        #         break
-        #     counter += len(image_files)
+        ProjectActivity.objects.create(
+            activity_type = "scanned-entity",
+            activity_data = activity_data,
+            project = project
+        )
 
-        # print(recognized_img_path)
-
-        return Response("Hello World")
+        return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -81,14 +81,14 @@ WSGI_APPLICATION = 'face_detection.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        # 'ENGINE': 'django.db.backends.mysql',
-        # 'NAME': 'face_detection',
-        # 'USER': 'face_detection',
-        # 'PASSWORD': '4Islamabad',
-        # 'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
-        # 'PORT': '3306',
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'face_detection',
+        'USER': 'face_detection',
+        'PASSWORD': '4Islamabad',
+        'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
+        'PORT': '3306',
     }
 }
 
