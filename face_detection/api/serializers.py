@@ -1,13 +1,13 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 
-from .models import Entry, EntryDetails, Project, ProjectActivity
+from .models import Entry, EntryDetails, Project, ProjectActivity, ProjectInviteToken, ProjectUserRelationship
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['url', 'username', 'first_name', 'last_name', 'email', 'groups']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'groups']
 
 
 class GroupSerializer(serializers.HyperlinkedModelSerializer):
@@ -39,7 +39,7 @@ class EntrySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entry
-        fields = ['entry_id', 'image', 'entry_details']
+        fields = ['entry_id', 'image', 'entry_details', 'project']
 
 class EntryDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,3 +71,13 @@ class ProjectActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectActivity
         fields = ['activity_type', 'activity_data', 'project_activity_id', 'created_at']
+
+class ProjectInviteTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectInviteToken
+        fields = ['token', 'project', 'user']
+
+class ProjectUserRelationshipSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectUserRelationship
+        fields = ['user_id', 'project_id', 'is_admin'] 

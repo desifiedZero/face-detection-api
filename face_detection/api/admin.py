@@ -6,7 +6,8 @@ from api.models import (
     Project, 
     ProjectUserRelationship, 
     ProjectActivity,
-    EntryImage
+    EntryImage,
+    ProjectInviteToken
 )
 
 # Register your models here.
@@ -19,6 +20,7 @@ admin.site.register(Entry)
 admin.site.register(EntryDetails)
 admin.site.register(ProjectActivity)
 admin.site.register(EntryImage)
+admin.site.register(ProjectInviteToken)
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):

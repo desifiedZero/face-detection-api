@@ -1,14 +1,15 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, permissions, status, generics
-from api.serializers import EntrySerializer, ProjectActivitySerializer, UserRegistrationSerializer, UserSerializer, GroupSerializer, ProjectSerializer
+from api.serializers import ProjectUserRelationshipSerializer, EntrySerializer, ProjectActivitySerializer, ProjectInviteTokenSerializer, UserRegistrationSerializer, UserSerializer, GroupSerializer, ProjectSerializer
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.views import APIView
 from rest_framework import status, mixins
+from rest_framework.decorators import permission_classes
 from api.models import Entry, EntryImage, Project, ProjectActivity, ProjectInviteToken, ProjectUserRelationship, EntryDetails
 from .permissions import (
-    InvitePermission
+    IsProjectAdmin
 )
 from django.core.mail import EmailMessage
 from django.shortcuts import get_object_or_404
@@ -75,11 +76,14 @@ class ProjectView(APIView):
         if serializer.is_valid():
             serializer.save()
 
-            # attach user to project 
-            user = User.objects.get(id=self.request.user.id)
+            # attach user to project and make admin
             project = Project.objects.get(id=serializer.data['id'])
-            project.users.add(user)
-            project.save()
+            user = User.objects.get(id=self.request.user.id)
+            ProjectUserRelationship.objects.create(
+                user = user,
+                project = project,
+                is_admin = True
+            )
 
             return Response(
                 {"message": "Project created successfully"},
@@ -88,11 +92,21 @@ class ProjectView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, project_id, *args, **kwargs):
-        project = get_object_or_404(Project, id=project_id)
-        serializer = ProjectSerializer(project)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        obj = ProjectUserRelationship.objects.filter(user__id=self.request.user.id, project__id=project_id)
+        if obj.exists():
+            project = get_object_or_404(Project, id=project_id)
+            serializer = ProjectSerializer(project)
+            res = serializer.data
+            res.update({"is_admin": obj[0].is_admin})
+            return Response(res, status=status.HTTP_200_OK)
+        
+        return Response(status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, project_id):
+        obj = ProjectUserRelationship.objects.get(user__id=self.request.user.id, project__id=project_id)
+        if not obj.exists() and obj.is_admin == False:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
         try:
             project = Project.objects.get(id=project_id)
         except Project.DoesNotExist:
@@ -103,6 +117,81 @@ class ProjectView(APIView):
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+class ProjectUserManagerView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsProjectAdmin]
+
+    def get(self, request, project_id, *args, **kwargs):
+        project = get_object_or_404(Project, id=project_id)
+        users = project.users.all()
+        serializer = UserSerializer(users, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, project_id, user_id, *args, **kwargs):
+        project = get_object_or_404(Project, id=project_id)
+        user = get_object_or_404(User, id=user_id)
+        try:
+            relation = ProjectUserRelationship.objects.get(
+                user = user,
+                project = project
+            )
+        except ProjectUserRelationship.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        relation.delete()
+        return Response(status=status.HTTP_200_OK)
+    
+class ProjectUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    #leave project
+    def delete(self, request, project_id, *args, **kwargs):
+        project = get_object_or_404(Project, id=project_id)
+        user = get_object_or_404(User, id=self.request.user.id)
+        try:
+            relation = ProjectUserRelationship.objects.get(
+                user = user,
+                project = project
+            )
+        except ProjectUserRelationship.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        relation.delete()
+        return Response(status=status.HTTP_200_OK)
+
+class AdminPermissionView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsProjectAdmin]
+
+    def post(self, request, project_id, user_id, *args, **kwargs):
+        project = get_object_or_404(Project, id=project_id)
+        user = get_object_or_404(User, id=user_id)
+        try:
+            relation = ProjectUserRelationship.objects.get(
+                user = user,
+                project = project
+            )
+        except ProjectUserRelationship.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        relation.is_admin = True
+        relation.save()
+        return Response(status=status.HTTP_200_OK)
+    
+    def delete(self, request, project_id, user_id, *args, **kwargs):
+        project = get_object_or_404(Project, id=project_id)
+        user = get_object_or_404(User, id=user_id)
+        try:
+            relation = ProjectUserRelationship.objects.get(
+                user = user,
+                project = project
+            )
+        except ProjectUserRelationship.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        relation.is_admin = False
+        relation.save()
+        return Response(status=status.HTTP_200_OK)
     
 class ProjectsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -144,9 +233,11 @@ class ActivityView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class InviteView(APIView):
-    permission_classes = [InvitePermission]
+    permission_classes = [permissions.IsAuthenticated, IsProjectAdmin]
 
     def post(self, request, project_id):
+        self.permission_classes = [IsProjectAdmin]
+
         user_email = request.data.get("email")
 
         try:
@@ -176,14 +267,34 @@ class InviteView(APIView):
 
         return Response({"detail": "Invite sent to the email"}, status=status.HTTP_200_OK)
 
+class ListInvitesView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    # get all invites for the logged in user
+    def get(self, request):
+        invites = ProjectInviteToken.objects.filter(user__id=self.request.user.id)
+        print(self.request.user)
+        serializer = ProjectInviteTokenSerializer(invites, many=True)
+
+        #also return accept and reject links for all invites
+        for i in serializer.data:
+            i['accept_link'] = f"{request.get_host()}/api/invite/accept/{i['project']}/{i['token']}/"
+            i['decline_link'] = f"{request.get_host()}/api/invite/decline/{i['project']}/{i['token']}/"
+
+        # expand project data
+        for i in serializer.data:
+            project = Project.objects.get(id=i['project'])
+            i['project'] = ProjectSerializer(project).data
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class InviteAcceptView(APIView):
 
       def get(self, request, project_id, token):
-        try:
-            invite_obj = ProjectInviteToken.objects.get(token=token)
-        except ProjectInviteToken.DoesNotExist:
+        obj = ProjectInviteToken.objects.filter(token=token)
+        if len(obj) == 0:
             return Response({"detail": "Token not found"}, status=status.HTTP_400_BAD_REQUEST)
+        invite_obj = obj[0]
 
         user = invite_obj.user
         try:
@@ -191,12 +302,18 @@ class InviteAcceptView(APIView):
                 id = project_id
             )
         except Project.DoesNotExist:
+            invite_obj.delete()
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
-        proj = ProjectUserRelationship.objects.create(
-            user = user,
-            project = project,
-        )
+        try:
+            proj = ProjectUserRelationship.objects.create(
+                user = user,
+                project = project,
+            )
+        except:
+            invite_obj.delete()
+            return Response({"detail": "You are already a part of this project"}, status=status.HTTP_200_OK)
+
         invite_obj.delete()
         return Response({"detail": "Added to project successful"}, status=status.HTTP_200_OK)
       
@@ -204,7 +321,8 @@ class InviteAcceptView(APIView):
 class InviteDeclineView(APIView):
     def get(self, request, project_id, token):
         try:
-            invite_obj = ProjectInviteToken.objects.get(token=token)
+            objects = ProjectInviteToken.objects.filter(token=token)
+            invite_obj = objects[0]
         except ProjectInviteToken.DoesNotExist:
             return Response({"detail": "Token not found"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -228,7 +346,7 @@ class ActiveUserView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class FaceRegisterView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         project_id = request.data.get('project_id')
@@ -261,6 +379,28 @@ class FaceRegisterView(APIView):
             c.save()
 
         return Response({}, status=status.HTTP_201_CREATED)
+    
+    def delete(self, request, project_id, entry_id):
+        # delete all entries and images
+        project = Project.objects.get(id=project_id)
+
+        if not project:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        entries = Entry.objects.get(project=project, entry_id=entry_id)
+
+        if not entries:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        # get entryimages and delete them
+        images = EntryImage.objects.filter(entry=entries)
+        for image in images:
+            image.image.delete()
+            image.delete()
+
+        entries.delete()
+
+        return Response(status=status.HTTP_200_OK)
 
 class FaceScanView(APIView):
     # permission_classes = [permissions.IsAuthenticated]

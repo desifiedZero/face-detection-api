@@ -1,14 +1,12 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-# Create your models here.
-
 class Project(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=1000)
     storageSchema = models.JSONField(null=True)
-    users = models.ManyToManyField(User, through='ProjectUserRelationship', related_name='projects')
+    users = models.ManyToManyField(User, through='ProjectUserRelationship')
 
     @property
     def registered(self):

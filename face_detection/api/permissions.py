@@ -3,7 +3,7 @@ from .models import (
     ProjectUserRelationship
 )
 
-class InvitePermission(BasePermission):
+class IsProjectAdmin(BasePermission):
 
     def has_permission(self, request, view):
         # Check if the user is authenticated
